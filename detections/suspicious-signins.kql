@@ -1,0 +1,44 @@
+
+let Lookback = 24h;
+let FailureWindow = 30m;
+let MinimumFailures = 5;
+let FailedSignins =
+    SigninLogs
+    | where TimeGenerated > ago(Lookback)
+    | where ResultType != "0"
+    | where isnotempty(UserPrincipalName)
+    | where isnotempty(IPAddress)
+    | project
+        UserPrincipalName,
+        IPAddress,
+        FailureTime = TimeGenerated;
+let SuccessfulSignins =
+    SigninLogs
+    | where TimeGenerated > ago(Lookback)
+    | where ResultType == "0"
+    | where isnotempty(UserPrincipalName)
+    | where isnotempty(IPAddress)
+    | project
+        UserPrincipalName,
+        IPAddress,
+        SuccessTime = TimeGenerated,
+        AppDisplayName;
+FailedSignins
+| join kind=inner SuccessfulSignins
+    on UserPrincipalName, IPAddress
+| where FailureTime < SuccessTime
+| where FailureTime >= SuccessTime - FailureWindow
+| summarize
+    FailedAttempts = count(),
+    FirstFailure = min(FailureTime)
+    by UserPrincipalName, IPAddress,
+       SuccessTime, AppDisplayName
+| where FailedAttempts >= MinimumFailures
+| project
+    SuccessTime,
+    UserPrincipalName,
+    IPAddress,
+    FailedAttempts,
+    FirstFailure,
+    AppDisplayName
+| order by SuccessTime desc
