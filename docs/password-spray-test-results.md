@@ -29,16 +29,38 @@ The KQL query executed successfully and returned one matching detection row.
 - IPAddress: 203.0.113.10
 
 **Result: PASS — Positive detection test**
+## Negative Detection Test
+
+**Test date:** 23 November 2026
+
+**Objective:** Confirm that authentication activity below the configured detection thresholds does not generate an alert.
+
+### Test Configuration
+
+- Failed sign-ins: 5
+- Distinct targeted users: 5
+- Source IP address: 203.0.113.10
+- Minimum failure threshold: 20
+- Minimum distinct users: 10
+- Detection window: 15 minutes
+
+### Observed Results
+
+The KQL query executed successfully and returned zero detection rows.
+
+**Result: PASS — Negative detection test**
+
+## Overall Test Results
+
+| Test Scenario | Expected Result | Actual Result | Status |
+|---|---|---|---|
+| Positive: 25 failures, 12 users | 1 detection | 1 detection | PASS |
+| Negative: 5 failures, 5 users | 0 detections | 0 detections | PASS |
 
 ## Limitations
 
-Testing used synthetic data created inside the KQL query, not live Microsoft Sentinel sign-in logs.
+Testing was performed using synthetic data in Azure Data Explorer.
 
-This test confirms the positive detection scenario only. Additional testing is required for benign activity, threshold boundaries, time-window boundaries, and false positives.
+The detection has not been validated against live Microsoft Sentinel logs or deployed as a production analytics rule.
 
-## Next Steps
-
-- Test activity below the detection thresholds.
-- Test events crossing 15-minute time-bin boundaries.
-- Validate the query against a dedicated Microsoft Sentinel lab when available.
-- Document investigation and response procedures.
+Further testing is recommended for time-window boundaries and false positives.
